@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tebak Negara 🌍</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      min-height: 100vh;
+      transition: background 0.5s;
+    }
+    .dark { background: linear-gradient(135deg, #1e2937, #334155); }
+
+    .container {
+      max-width: 650px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    h1 { font-size: 2.6rem; text-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    button.ctrl {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 50px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .score-board {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin: 20px 0;
+      font-size: 1.3rem;
+    }
+
+    .flag-container {
+      margin: 30px 0;
+      padding: 25px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    }
+    .flag {
+      width: 300px;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 15px;
+      border: 10px solid #fff;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+
+    .timer {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #facc15;
+      margin: 15px 0;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin: 30px 0;
+    }
+    button.option {
+      padding: 18px;
+      font-size: 1.15rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    button.option:hover { transform: scale(1.05); }
+
+    .input-hard {
+      margin: 20px auto;
+      width: 80%;
+      padding: 18px;
+      font-size: 1.3rem;
+      border-radius: 15px;
+      border: none;
+      text-align: center;
+    }
+
+    .result {
+      min-height: 60px;
+      font-size: 1.5rem;
+      margin: 20px 0;
+    }
+
+    .next-btn {
+      padding: 15px 50px;
+      font-size: 1.3rem;
+      background: #facc15;
+      color: #1e2937;
+      border: none;
+      border-radius: 50px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .game-over {
+      font-size: 2rem;
+      margin: 30px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🌍 Tebak Negara</h1>
+      <div class="controls">
+        <button class="ctrl" id="modeBtn">Mode: Mudah</button>
+        <button class="ctrl" id="darkBtn">🌙 Dark</button>
+      </div>
+    </header>
+
+    <div class="score-board">
+      <div>Skor: <strong id="score">0</strong></div>
+      <div>High Score: <strong id="highscore">0</strong></div>
+      <div>Putaran: <strong id="round">1</strong>/15</div>
+    </div>
+
+    <div class="timer" id="timer">15</div>
+
+    <div class="flag-container">
+      <img id="flag" class="flag" src="" alt="Bendera">
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <!-- Easy Mode -->
+    <div id="easyMode">
+      <div class="options" id="options"></div>
+    </div>
+
+    <!-- Hard Mode -->
+    <div id="hardMode" style="display:none;">
+      <input type="text" id="answerInput" class="input-hard" placeholder="Ketik nama negara..." autocomplete="off">
+      <button class="next-btn" id="submitHard">Submit Jawaban</button>
+    </div>
+
+    <button class="next-btn" id="nextBtn" style="display:none;">Lanjutkan →</button>
+
+    <div id="gameOver" style="display:none;" class="game-over"></div>
+  </div>
+
+  <script>
+    const countries = [
+      { name: "Indonesia", flag: "https://flagcdn.com/w320/id.png" },
+      { name: "Malaysia", flag: "https://flagcdn.com/w320/my.png" },
+      { name: "Singapura", flag: "https://flagcdn.com/w320/sg.png" },
+      { name: "Thailand", flag: "https://flagcdn.com/w320/th.png" },
+      { name: "Vietnam", flag: "https://flagcdn.com/w320/vn.png" },
+      { name: "Filipina", flag: "https://flagcdn.com/w320/ph.png" },
+      { name: "Jepang", flag: "https://flagcdn.com/w320/jp.png" },
+      { name: "Korea Selatan", flag: "https://flagcdn.com/w320/kr.png" },
+      { name: "Amerika Serikat", flag: "https://flagcdn.com/w320/us.png" },
+      { name: "Brasil", flag: "https://flagcdn.com/w320/br.png" },
+      { name: "Prancis", flag: "https://flagcdn.com/w320/fr.png" },
+      { name: "Jerman", flag: "https://flagcdn.com/w320/de.png" },
+      { name: "Italia", flag: "https://flagcdn.com/w320/it.png" },
+      { name: "Australia", flag: "https://flagcdn.com/w320/au.png" },
+      { name: "India", flag: "https://flagcdn.com/w320/in.png" },
+      { name: "Mesir", flag: "https://flagcdn.com/w320/eg.png" },
+      { name: "Turki", flag: "https://flagcdn.com/w320/tr.png" },
+      { name: "Meksiko", flag: "https://flagcdn.com/w320/mx.png" },
+      { name: "Spanyol", flag: "https://flagcdn.com/w320/es.png" },
+      { name: "Inggris", flag: "https://flagcdn.com/w320/gb.png" }
+    ];
+
+    let currentCountry = {};
+    let score = 0;
+    let highScore = localStorage.getItem('highScore') || 0;
+    let round = 1;
+    const totalRounds = 15;
+    let timeLeft = 15;
+    let timerInterval;
+    let isHardMode = false;
+    let answered = false;
+
+    // DOM Elements
+    const scoreEl = document.getElementById('score');
+    const highscoreEl = document.getElementById('highscore');
+    const roundEl = document.getElementById('round');
+    const flagEl = document.getElementById('flag');
+    const timerEl = document.getElementById('timer');
+    const optionsEl = document.getElementById('options');
+    const resultEl = document.getElementById('result');
+    const nextBtn = document.getElementById('nextBtn');
+    const modeBtn = document.getElementById('modeBtn');
+    const darkBtn = document.getElementById('darkBtn');
+    const hardModeDiv = document.getElementById('hardMode');
+    const easyModeDiv = document.getElementById('easyMode');
+    const answerInput = document.getElementById('answerInput');
+    const submitHard = document.getElementById('submitHard');
+    const gameOverEl = document.getElementById('gameOver');
+
+    highscoreEl.textContent = highScore;
+
+    // Sound Effects
+    function playSound(type) {
+      const audio = new Audio();
+      audio.volume = 0.6;
+      if (type === 'correct') {
+        audio.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+      } else {
+        audio.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3";
+      }
+      audio.play().catch(() => {});
+    }
+
+    function startTimer() {
+      timeLeft = 15;
+      timerEl.textContent = timeLeft;
+      clearInterval(timerInterval);
+      
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+        if (timeLeft <= 5) timerEl.style.color = '#ef4444';
+        
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          timeOut();
+        }
+      }, 1000);
+    }
+
+    function timeOut() {
+      answered = true;
+      resultEl.innerHTML = `⏰ Waktu Habis! Jawabannya adalah <strong>${currentCountry.name}</strong>`;
+      nextBtn.style.display = 'inline-block';
+    }
+
+    function newQuestion() {
+      answered = false;
+      resultEl.textContent = '';
+      nextBtn.style.display = 'none';
+      optionsEl.innerHTML = '';
+      answerInput.value = '';
+
+      currentCountry = countries[Math.floor(Math.random() * countries.length)];
+      flagEl.src = currentCountry.flag;
+
+      if (!isHardMode) {
+        // Easy Mode
+        easyModeDiv.style.display = 'block';
+        hardModeDiv.style.display = 'none';
+
+        let wrongs = countries
+          .filter(c => c.name !== currentCountry.name)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 3);
+
+        let all = [...wrongs, currentCountry].sort(() => Math.random() - 0.5);
+
+        all.forEach(country => {
+          const btn = document.createElement('button');
+          btn.className = 'option';
+          btn.textContent = country.name;
+          btn.onclick = () => checkAnswer(country.name, btn);
+          optionsEl.appendChild(btn);
+        });
+      } else {
+        // Hard Mode
+        easyModeDiv.style.display = 'none';
+        hardModeDiv.style.display = 'block';
+        answerInput.focus();
+      }
+
+      startTimer();
+    }
+
+    function checkAnswer(selected, button = null) {
+      if (answered) return;
+      answered = true;
+      clearInterval(timerInterval);
+
+      if (selected === currentCountry.name) {
+        playSound('correct');
+        score += Math.floor(timeLeft * 2); // Bonus waktu
+        scoreEl.textContent = score;
+        resultEl.innerHTML = `✅ Benar! +${Math.floor(timeLeft * 2)} poin`;
+        if (button) button.style.background = '#4ade80';
+      } else {
+      
+        resultEl.innerHTML = `❌ Salah! Jawabannya <strong>${currentCountry.name}</strong>`;
+        if (button) button.style.background = '#f87171';
+      }
+
+      nextBtn.style.display = 'inline-block';
+    }
+
+    // Event Listeners
+    nextBtn.addEventListener('click', () => {
+      round++;
+      roundEl.textContent = round;
+
+      if (round > totalRounds) {
+        endGame();
+        return;
+      }
+      newQuestion();
+    });
+
+    submitHard.addEventListener('click', () => {
+      const answer = answerInput.value.trim();
+      if (answer === '') return;
+      checkAnswer(answer);
+    });
+
+    answerInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') submitHard.click();
+    });
+
+    modeBtn.addEventListener('click', () => {
+      isHardMode = !isHardMode;
+      modeBtn.textContent = isHardMode ? "Mode: Sulit" : "Mode: Mudah";
+      newQuestion();
+    });
+
+    darkBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      darkBtn.textContent = document.body.classList.contains('dark') ? "☀️ Light" : "🌙 Dark";
+    });
+
+    function endGame() {
+      clearInterval(timerInterval);
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+        highscoreEl.textContent = highScore;
+      }
+
+      gameOverEl.innerHTML = `
+        🎉 Permainan Selesai!<br>
+        Skor Akhir: <strong>${score}</strong><br>
+        High Score: <strong>${highScore}</strong>
+      `;
+      gameOverEl.style.display = 'block';
+      nextBtn.style.display = 'none';
+      hardModeDiv.style.display = 'none';
+      easyModeDiv.style.display = 'none';
+
+      setTimeout(() => {
+        if (confirm("Main lagi?")) {
+          score = 0;
+          round = 1;
+          scoreEl.textContent = 0;
+          roundEl.textContent = 1;
+          gameOverEl.style.display = 'none';
+          newQuestion();
+        }
+      }, 1500);
+    }
+
+    // Start Game
+    newQuestion();
+  </script>
+</body>
+</html>
